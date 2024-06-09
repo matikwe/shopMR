@@ -29,23 +29,27 @@ public class UserConfiguration {
 		return new CustomUserDetailsService(userRepository);
 	}
 
+	private static final String[] AUTH_WHITELIST = {
+			"/api/v1/auth/register",
+			"/api/v1/auth/login",
+			"/api/v1/auth/validate",
+			"/api/v1/auth/reset-password",
+			"/api/v1/auth/activate",
+			"/api/v1/auth/logout",
+			"/api/v1/auth/auto-login",
+			"/api/v1/auth/logged-in",
+			"/api/v1/auth/authorize"
+	};
 
-	//TODO https://stackoverflow.com/questions/74447778/spring-security-in-spring-boot-3
+	//https://stackoverflow.com/questions/74447778/spring-security-in-spring-boot-3
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		return http
-				.csrf(AbstractHttpConfigurer::disable)
-				.authorizeHttpRequests( auth -> auth
-						.requestMatchers("/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/validate","/api/v1/auth/reset-password","/api/v1/auth/activate","/api/v1/auth/logout","/api/v1/auth/auto-login","/api/v1/auth/logged-in").permitAll()
+		return http.csrf(AbstractHttpConfigurer::disable)
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(AUTH_WHITELIST).permitAll()
 						.anyRequest().authenticated()
-				).build();
-		/*return http.csrf().disable()
-				.authorizeHttpRequests()
-				.requestMatchers("/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/validate","/api/v1/auth/reset-password.html","/api/v1/auth/activate","/api/v1/auth/logout","/api/v1/auth/auto-login","/api/v1/auth/logged-in").permitAll()
-				.anyRequest().authenticated()
-				.and()
-				.build();*/
-
+				)
+				.build();
 	}
 
 	@Bean

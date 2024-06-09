@@ -52,19 +52,20 @@ public class UserService {
 		userRepository.findUserByEmail(userRegisterDTO.getEmail()).ifPresent(value -> {
 			throw new UserExistingWithEmail("Użytkownik z podanym mailem istnieje");
 		});
+		User user = buildUserEntity(userRegisterDTO);
+		saveUser(user);
+		emailService.sendActivation(user);
+	}
+
+	private User buildUserEntity(UserRegisterDTO userRegisterDTO) {
 		User user = new User();
 		user.setLock(true);
 		user.setLogin(userRegisterDTO.getLogin());
 		user.setPassword(userRegisterDTO.getPassword());
 		user.setEmail(userRegisterDTO.getEmail());
 		user.setEnabled(true);
-		if (userRegisterDTO.getRole() != null) {
-			user.setRole(userRegisterDTO.getRole());
-		} else {
-			user.setRole(Role.USER);
-		}
-		saveUser(user);
-		emailService.sendActivation(user);
+		user.setRole(userRegisterDTO.getRole() != null ? userRegisterDTO.getRole() : Role.USER);
+		return user;
 	}
 
 	public ResponseEntity<?> login(HttpServletResponse response, User authRequest) {
@@ -73,7 +74,7 @@ public class UserService {
 			Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
 			if (authentication.isAuthenticated()) {
 				Cookie refresh = cookieService.generateCookie("refresh", generateToken(authRequest.getUsername(), refreshExp), refreshExp);
-				Cookie cookie = cookieService.generateCookie("token", generateToken(authRequest.getUsername(), exp), exp);
+				Cookie cookie = cookieService.generateCookie("Authorization", generateToken(authRequest.getUsername(), exp), exp);
 				response.addCookie(cookie);
 				response.addCookie(refresh);
 				return ResponseEntity.ok(UserRegisterDTO.builder().login(user.getUsername()).email(user.getEmail()).role(user.getRole()).build());
@@ -94,12 +95,8 @@ public class UserService {
 	}
 
 	public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-		log.info("Delete all cookies");
-		Cookie cookie = cookieService.removeCookie(request.getCookies(), "Authorization");
-		if (cookie != null) {
-			response.addCookie(cookie);
-		}
-		cookie = cookieService.removeCookie(request.getCookies(), "refresh");
+		log.info("Clear all cookies");
+		Cookie cookie = cookieService.removeCookie(request.getCookies(), "refresh");
 		if (cookie != null) {
 			response.addCookie(cookie);
 		}
@@ -112,7 +109,7 @@ public class UserService {
 		String refresh = null;
 		if (request.getCookies() != null) {
 			for (Cookie value : Arrays.stream(request.getCookies()).toList()) {
-				if (value.getName().equals("token")) {
+				if (value.getName().equals("Authorization")) {
 					token = value.getValue();
 				} else if (value.getName().equals("refresh")) {
 					refresh = value.getValue();
@@ -123,12 +120,12 @@ public class UserService {
 		}
 		try {
 			jwtService.validateToken(token);
-		} catch (IllegalArgumentException | ExpiredJwtException e) {
+		} catch (ExpiredJwtException | IllegalArgumentException e) {
 			jwtService.validateToken(refresh);
 			Cookie refreshCookie = cookieService.generateCookie("refresh", jwtService.refreshToken(refresh, refreshExp), refreshExp);
 			Cookie cookie = cookieService.generateCookie("Authorization", jwtService.refreshToken(refresh, exp), exp);
-			response.addCookie(refreshCookie);
 			response.addCookie(cookie);
+			response.addCookie(refreshCookie);
 		}
 	}
 
@@ -172,7 +169,6 @@ public class UserService {
 			return;
 		}
 		throw new UserDontExistException("User dont exist");
-
 	}
 
 	public void recoveryPassword(String email) {
@@ -189,7 +185,7 @@ public class UserService {
 	public void resetPassword(ChangePasswordData changePasswordData) throws UserDontExistException {
 		ResetOperations resetOperations = resetOperationsRepository.findByUuid(changePasswordData.getUuid()).orElse(null);
 		if (resetOperations != null) {
-			User user = userRepository.findUserByUuid(changePasswordData.getUuid()).orElse(null);
+			User user = userRepository.findUserByUuid(resetOperations.getUuid()).orElse(null);
 			if (user != null) {
 				user.setPassword(changePasswordData.getPassword());
 				saveUser(user);
@@ -198,6 +194,5 @@ public class UserService {
 			}
 		}
 		throw new UserDontExistException("User dont exist");
-
 	}
 }

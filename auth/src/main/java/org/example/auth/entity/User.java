@@ -27,9 +27,9 @@ public class User implements UserDetails {
 	private String password;
 	@Enumerated(EnumType.STRING)
 	private Role role;
-	@Column(name = "isLock")
+	@Column(name = "islock")
 	private boolean isLock;
-	@Column(name = "isEnabled")
+	@Column(name = "isenabled")
 	private boolean isEnabled;
 
 	public User() {
@@ -84,9 +84,6 @@ public class User implements UserDetails {
 	}
 
 	private void generateUUID() {
-		if (uuid == null || uuid.contains("")) {
-			setUuid(UUID.randomUUID()
-					.toString());
-		}
+		setUuid(UUID.randomUUID().toString());
 	}
 }

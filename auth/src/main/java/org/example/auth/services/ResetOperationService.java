@@ -2,6 +2,7 @@ package org.example.auth.services;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.auth.entity.ResetOperations;
 import org.example.auth.entity.User;
 import org.example.auth.repository.ResetOperationsRepository;
@@ -11,11 +12,11 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @EnableScheduling
+@Slf4j
 public class ResetOperationService {
 
 	private final ResetOperationsRepository resetOperationsRepository;
@@ -23,19 +24,21 @@ public class ResetOperationService {
 
 	@Transactional
 	public ResetOperations initResetOperation(User user) {
+		log.info("--START initResetOperation");
 		ResetOperations resetOperations = new ResetOperations();
 
-		resetOperations.setUuid(UUID.randomUUID().toString());
-		resetOperations.setCreateDate(new Timestamp(System.currentTimeMillis()).toString());
+		resetOperations.setUuid(user.getUuid());
+		resetOperations.setCreateDate(new Timestamp(System.currentTimeMillis()));
 		resetOperations.setUser(user);
 
 		resetOperationsRepository.deleteAllByUser(user);
-
+		log.info("--STOP initResetOperation");
 		return resetOperationsRepository.saveAndFlush(resetOperations);
 	}
 
-	public void endOperation(String uid) {
-		resetOperationsRepository.findByUuid(uid).ifPresent(resetOperationsRepository::delete);
+
+	public void endOperation(String uuid) {
+		resetOperationsRepository.findByUuid(uuid).ifPresent(resetOperationsRepository::delete);
 	}
 
 	@Scheduled(cron = "0 0/1 * * * *")

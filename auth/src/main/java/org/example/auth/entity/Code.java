@@ -14,7 +14,7 @@ public enum Code {
 
 	public final String label;
 
-	private Code(String label) {
+	Code(String label) {
 		this.label = label;
 	}
 }

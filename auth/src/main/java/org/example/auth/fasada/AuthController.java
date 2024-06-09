@@ -10,6 +10,8 @@ import org.example.auth.exceptions.UserDontExistException;
 import org.example.auth.exceptions.UserExistingWithEmail;
 import org.example.auth.exceptions.UserExistingWithName;
 import org.example.auth.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 	private final UserService userService;
 
 	@PostMapping("/register")
@@ -78,9 +81,12 @@ public class AuthController {
 	@PostMapping("/reset-password")
 	public ResponseEntity<AuthResponse> sendMailRecovery(@RequestBody ResetPasswordData resetPasswordData) {
 		try {
+			log.info("--START sendMailRecovery");
 			userService.recoveryPassword(resetPasswordData.getEmail());
+			log.info("--STOP sendMailRecovery");
 			return ResponseEntity.ok(new AuthResponse(Code.SUCCESS));
 		} catch (UserDontExistException e) {
+			log.info("User dont exist in database");
 			return ResponseEntity.status(400).body(new AuthResponse(Code.A6));
 		}
 	}
@@ -88,9 +94,12 @@ public class AuthController {
 	@PatchMapping("/reset-password")
 	public ResponseEntity<AuthResponse> recoveryMail(@RequestBody ChangePasswordData changePasswordData) {
 		try {
+			log.info("--START recoveryMail");
 			userService.resetPassword(changePasswordData);
+			log.info("--STOP recoveryMail");
 			return ResponseEntity.ok(new AuthResponse(Code.SUCCESS));
 		} catch (UserDontExistException e) {
+			log.info("User dont exist in database");
 			return ResponseEntity.status(400).body(new AuthResponse(Code.A6));
 		}
 	}
@@ -100,5 +109,4 @@ public class AuthController {
 	public ValidationMessage handleValidationException(MethodArgumentNotValidException ex) {
 		return new ValidationMessage(ex.getBindingResult().getAllErrors().get(0).getDefaultMessage());
 	}
-
 }

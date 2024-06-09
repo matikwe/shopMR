@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.sql.Timestamp;
+
 @Table(name = "resetoperations")
 @Entity
 @Getter
@@ -22,7 +24,7 @@ public class ResetOperations {
 	@JoinColumn(name = "users")
 	private User user;
 	@Column(name = "createdate")
-	private String createDate;
+	private Timestamp createDate;
 	private String uuid;
 }
 

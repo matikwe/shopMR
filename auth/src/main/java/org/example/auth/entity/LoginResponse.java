@@ -10,12 +10,12 @@ import java.sql.Timestamp;
 public class LoginResponse {
 
 	private final String timestamp;
-	private final boolean massage;
+	private final boolean message;
 	private final Code code;
 
 	public LoginResponse(boolean message) {
 		this.timestamp = String.valueOf(new Timestamp(System.currentTimeMillis()));
-		this.massage = message;
+		this.message = message;
 		this.code = Code.SUCCESS;
 	}
 }
